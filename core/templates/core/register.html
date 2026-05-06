@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Register | Urban Hunt{% endblock %}
+
+{% block content %}
+<section class="auth-login-shell auth-login-shell--centered">
+  <div class="auth-login-card hero">
+    <h2>Register</h2>
+    <form method="post" class="auth-form auth-form-modern auth-form--compact">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div class="auth-form-row">
+        <div class="auth-form-col">
+          <label for="id_username">Username</label>
+          {{ form.username }}
+          {{ form.username.errors }}
+        </div>
+        <div class="auth-form-col">
+          <label for="id_email">Email</label>
+          {{ form.email }}
+          {{ form.email.errors }}
+        </div>
+      </div>
+
+      <div class="auth-form-row">
+        <div class="auth-form-col">
+          <label for="id_mobile_no">Mobile No</label>
+          {{ form.mobile_no }}
+          {{ form.mobile_no.errors }}
+        </div>
+        <div class="auth-form-col">
+          <label for="id_role">Role</label>
+          {{ form.role }}
+          {{ form.role.errors }}
+        </div>
+      </div>
+
+      <div class="auth-form-col">
+        <label for="id_password1">Password</label>
+        {{ form.password1 }}
+        {{ form.password1.errors }}
+      </div>
+
+      <button type="submit" class="auth-submit auth-submit--register">Create Account</button>
+    </form>
+    <p class="auth-helper-copy">Already have an account? <a href="{% url 'core:login' %}">Login now</a></p>
+  </div>
+</section>
+{% endblock %}

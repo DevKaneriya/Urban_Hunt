@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home | Urban Hunt{% endblock %}
+
+{% block content %}
+<section class="home-hero">
+  <div class="home-hero-copy">
+    <span class="eyebrow">Verified Real Estate Platform</span>
+    <h1>Find your next home with clarity and confidence.</h1>
+    <form class="hero-search-bar" action="{% url 'core:property_list' %}#property-results" method="get" role="search">
+      <svg class="hero-search-bar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+      </svg>
+      <input
+        class="hero-search-bar-input"
+        type="search"
+        name="q"
+        placeholder="Search properties by city, area, or title"
+        aria-label="Search properties"
+        autocomplete="off"
+      />
+      <button class="btn btn-accent hero-search-bar-submit" type="submit">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="16" height="16" fill="currentColor">
+          <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        </svg>
+        Search
+      </button>
+    </form>
+  </div>
+
+</section>
+
+<section class="home-section">
+  <div class="section-heading">
+    <span class="eyebrow">Simple Buying Flow</span>
+    <h2>Everything important stays easy to read.</h2>
+    <p>Browse listings, save the ones you like, and continue seller conversations without losing context.</p>
+  </div>
+
+  <div class="home-feature-grid">
+    <article class="home-feature-card">
+      <span class="feature-number">01</span>
+      <h3>Discover verified spaces</h3>
+      <p>Use clear filters for location, price, property type, and amenities to focus your search.</p>
+    </article>
+    <article class="home-feature-card">
+      <span class="feature-number">02</span>
+      <h3>Save your shortlist</h3>
+      <p>Bookmark strong options and review them later from a dedicated saved properties page.</p>
+    </article>
+    <article class="home-feature-card">
+      <span class="feature-number">03</span>
+      <h3>Talk to sellers</h3>
+      <p>Send inquiries and continue conversations inside a focused chat experience.</p>
+    </article>
+  </div>
+</section>
+
+<section class="home-section home-split">
+  <div class="home-split-panel dark">
+    <span class="eyebrow">For Buyers</span>
+    <h2>Compare listings before you contact.</h2>
+    <p>
+      Compare prices, check locations on the map, review seller details, and keep
+      your saved homes close while you decide.
+    </p>
+    <a class="btn btn-accent" href="{% url 'core:property_list' %}">Start Browsing</a>
+  </div>
+  <div class="home-split-panel light">
+    <span class="eyebrow">For Sellers</span>
+    <h2>Present properties professionally.</h2>
+    <p>
+      Upload details, images, documents, and manage interested buyers from the
+      seller dashboard once your listings are ready.
+    </p>
+    {% if request.user.is_authenticated %}
+      <a class="btn btn-dark" href="{% url 'core:dashboard' %}">Go to Dashboard</a>
+    {% else %}
+      <a class="btn btn-dark" href="{% url 'core:register' %}">Join Urban Hunt</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="home-section">
+  <div class="section-heading">
+    <span class="eyebrow">Featured Listings</span>
+    <h2>Approved properties ready to review.</h2>
+    <p>Featured listings are selected from verified properties available to buyers.</p>
+  </div>
+
+  <div class="row g-4">
+    {% for property in featured_properties %}
+      <div class="col-12 col-md-6 col-xl-4">
+        <article class="card premium-card home-listing-card h-100 border-0 shadow-sm">
+          {% if property.image %}
+            <img src="{{ property.image.url }}" class="card-img-top premium-card-image" alt="{{ property.title }}" />
+          {% else %}
+            <div class="home-listing-placeholder">
+              <span>{{ property.get_property_type_display }}</span>
+            </div>
+          {% endif %}
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
+              <h3 class="h5 mb-0">{{ property.title }}</h3>
+              <span class="badge text-bg-success">Verified</span>
+            </div>
+            <p class="text-muted mb-2">{{ property.location }}</p>
+            <p class="small mb-3">{{ property.description|truncatechars:115 }}</p>
+            <div class="mt-auto">
+              <p class="fw-semibold fs-5 mb-3">&#8377;{{ property.price }}</p>
+              <a class="btn btn-dark w-100" href="{% url 'core:property_detail' property.pk %}">View Details</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="glass-card p-4 p-lg-5 text-center">
+          <h3 class="h4 mb-2">Featured listings are coming soon</h3>
+          <p class="text-muted mb-4">Approved properties will appear here once sellers add and verify them.</p>
+          <a class="btn btn-accent" href="{% url 'core:property_list' %}">Browse All Properties</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="home-section home-process">
+  <div class="section-heading">
+    <span class="eyebrow">How It Works</span>
+    <h2>A calm path from search to conversation.</h2>
+  </div>
+  <div class="process-track">
+    <article>
+      <span>Search</span>
+      <h3>Explore the market</h3>
+      <p>Use filters to focus on the homes and locations that matter most.</p>
+    </article>
+    <article>
+      <span>Shortlist</span>
+      <h3>Save the best</h3>
+      <p>Keep your favorite listings together on one dedicated page.</p>
+    </article>
+    <article>
+      <span>Connect</span>
+      <h3>Message sellers</h3>
+      <p>Open a chat and move from interest to action with clarity.</p>
+    </article>
+  </div>
+</section>
+
+<section class="home-final-cta">
+  <span class="eyebrow">Ready To Start?</span>
+  <h2>Search verified homes with a cleaner, more professional experience.</h2>
+  <div class="home-hero-actions justify-content-center">
+    <a class="btn btn-accent btn-lg" href="{% url 'core:property_list' %}">View Properties</a>
+    {% if request.user.is_authenticated and request.user.role == 'buyer' %}
+      <a class="btn btn-outline-light btn-lg" href="{% url 'core:saved_properties' %}">View Saved</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

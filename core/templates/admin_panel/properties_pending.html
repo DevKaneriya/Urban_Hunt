@@ -1,0 +1,176 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Pending Approval{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-sep">›</span><a href="{% url 'core:admin_properties' %}" style="color:var(--text-secondary);text-decoration:none;">Properties</a><span class="breadcrumb-sep">›</span><span>Pending Approval</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Pending Approval</h1>
+    <p class="page-subtitle">Properties awaiting verification — {{ page_obj.paginator.count }} total.</p>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <span class="table-card-title">⏳ Unverified Listings</span>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Property</th>
+          <th>Seller</th>
+          <th>Type</th>
+          <th>Price (₹)</th>
+          <th>Location</th>
+          <th>Docs</th>
+          <th>Listed</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in page_obj %}
+        <tr id="row-pending-{{ p.id }}">
+          <td>{{ p.id }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              {% if p.image %}
+                <img src="{{ p.image.url }}" alt="{{ p.title }}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0;">
+              {% else %}
+                <div style="width:36px;height:36px;border-radius:6px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;">🏠</div>
+              {% endif %}
+              <strong>{{ p.title|truncatechars:28 }}</strong>
+            </div>
+          </td>
+          <td>{{ p.seller.username }}</td>
+          <td>
+            <span class="badge {% if p.property_type == 'rent' %}badge--blue{% else %}badge--green{% endif %}">
+              {{ p.get_property_type_display }}
+            </span>
+          </td>
+          <td>₹{{ p.price|floatformat:0 }}</td>
+          <td>{{ p.location|truncatechars:22 }}</td>
+          <td>
+            {% if p.documents %}
+              <a href="{{ p.documents.url }}" target="_blank" class="btn btn--view btn--sm" id="doc-{{ p.id }}">📄 Open</a>
+            {% else %}
+              <span class="badge badge--muted">None</span>
+            {% endif %}
+          </td>
+          <td>{{ p.created_at|date:"d M Y" }}</td>
+          <td>
+            <div class="table-actions">
+              <a href="{% url 'core:admin_property_detail' p.pk %}" class="btn btn--view btn--sm" id="view-pending-{{ p.id }}">View</a>
+              <button type="button" class="btn btn--delete btn--sm admin-delete-btn" data-url="{% url 'core:admin_property_delete' p.pk %}" data-row="row-pending-{{ p.id }}">Delete</button>
+              <button type="button" class="btn btn--approve btn--sm admin-action-btn" data-url="{% url 'core:admin_property_approve' p.pk %}" data-action="approve" data-id="pending-{{ p.id }}">✓ Approve</button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="table-empty">🎉 No pending properties. All listings are reviewed!</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="pagination-wrap">
+    <span>Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+    <div class="pagination-links">
+      {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">‹ Prev</a>{% else %}<span class="disabled">‹ Prev</span>{% endif %}
+      {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}<span class="current">{{ num }}</span>
+        {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}<a href="?page={{ num }}">{{ num }}</a>{% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Next ›</a>{% else %}<span class="disabled">Next ›</span>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+  function showAdminNotification(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'success' ? '#28a745' : '#dc3545'};
+      color: white;
+      padding: 15px 20px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  document.querySelectorAll('.admin-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      if (!confirm('Are you sure?')) return;
+      
+      const url = this.dataset.url;
+      const rowSelector = this.dataset.row;
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          const row = document.querySelector(`[id="${rowSelector}"]`);
+          if (row) {
+            row.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => row.remove(), 300);
+          }
+          showAdminNotification(data.message, 'success');
+        } else {
+          showAdminNotification(data.message || 'Failed', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showAdminNotification('An error occurred', 'error');
+      }
+    });
+  });
+
+  document.querySelectorAll('.admin-action-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const url = this.dataset.url;
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showAdminNotification(data.message, 'success');
+          setTimeout(() => location.reload(), 500);
+        } else {
+          showAdminNotification(data.message || 'Failed', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showAdminNotification('An error occurred', 'error');
+      }
+    });
+  });
+</script>
+{% endblock %}

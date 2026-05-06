@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  {% if is_delete %}Delete Property{% else %}Edit Property{% endif %} | Urban Hunt
+{% endblock %}
+
+{% block content %}
+<section class="edit-hero">
+  <div class="edit-hero-content">
+    {% if is_delete %}
+      <div class="edit-page-header">
+        <h1>Delete Property</h1>
+        <p>Are you sure you want to delete <strong>{{ property.title }}</strong>?</p>
+      </div>
+      <div class="delete-warning-box">
+        <div class="delete-warning-icon">⚠</div>
+        <div class="delete-warning-content">
+          <h3>This action cannot be undone</h3>
+          <p>Once you delete this property, it will be permanently removed from your listings. All inquiries and messages related to this property will also be deleted.</p>
+        </div>
+      </div>
+      <form method="post" class="edit-form delete-form">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete Property</button>
+        <a class="btn btn-outline-secondary" href="{% url 'core:dashboard' %}">Cancel</a>
+      </form>
+    {% else %}
+      <div class="edit-page-header">
+        <h1>Edit Property</h1>
+        <p>Update your property details and keep your listing fresh.</p>
+      </div>
+      <form method="post" enctype="multipart/form-data" class="edit-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="edit-form-actions">
+          <button type="submit" class="btn btn-primary">Update Property</button>
+          <a class="btn btn-outline-secondary" href="{% url 'core:dashboard' %}">Back</a>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,168 @@
+{% extends "admin_panel/base.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-sep">›</span><span>Dashboard</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Admin Dashboard</h1>
+    <p class="page-subtitle">Overview of Urban Hunt platform activity.</p>
+  </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon--blue">
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.total_users }}</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon stat-icon--cyan">
+      <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.buyers }}</div>
+      <div class="stat-label">Buyers</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon stat-icon--purple">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.sellers }}</div>
+      <div class="stat-label">Sellers</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon stat-icon--green">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.verified_properties }}</div>
+      <div class="stat-label">Verified Properties</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon stat-icon--warn">
+      <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.pending_properties }}</div>
+      <div class="stat-label">Pending Approval</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon stat-icon--blue">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.total_inquiries }}</div>
+      <div class="stat-label">Inquiries</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon stat-icon--cyan">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16v2H4zm0 4h10v2H4zm0 4h16v2H4zm0 4h10v2H4z"/></svg>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.total_messages }}</div>
+      <div class="stat-label">Chat Messages</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon stat-icon--green">
+      <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.saved_properties }}</div>
+      <div class="stat-label">Saved Properties</div>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard grid -->
+<div class="dashboard-grid">
+  <!-- Recent Properties -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <span class="table-card-title">🏘️ Recent Properties</span>
+      <a href="{% url 'core:admin_properties' %}" class="btn btn--view btn--sm">View All</a>
+    </div>
+    <div style="padding: 4px 24px 20px;">
+      {% if recent_properties %}
+        <div class="recent-list">
+          {% for p in recent_properties %}
+          <div class="recent-item">
+            <div class="recent-thumb">
+              {% if p.image %}
+                <img src="{{ p.image.url }}" alt="{{ p.title }}">
+              {% else %}🏠{% endif %}
+            </div>
+            <div class="recent-info">
+              <strong>{{ p.title }}</strong>
+              <small>{{ p.location }} · {{ p.seller.username }}</small>
+            </div>
+            <div class="recent-meta">
+              <span>{{ p.created_at|date:"d M" }}</span>
+              {% if p.is_verified %}
+                <span class="badge badge--green">✓</span>
+              {% else %}
+                <span class="badge badge--warn">Pending</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="table-empty">No properties yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Recent Users -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <span class="table-card-title">👤 Recent Users</span>
+      <a href="{% url 'core:admin_users' %}" class="btn btn--view btn--sm">View All</a>
+    </div>
+    <div style="padding: 4px 24px 20px;">
+      {% if recent_users %}
+        <div class="recent-list">
+          {% for u in recent_users %}
+          <div class="recent-item">
+            <div class="recent-thumb" style="background: linear-gradient(135deg,#6c7dff,#a78bfa); color:#fff; font-weight:700;">
+              {{ u.username|first|upper }}
+            </div>
+            <div class="recent-info">
+              <strong>{{ u.username }}</strong>
+              <small>{{ u.email|default:"—" }}</small>
+            </div>
+            <div class="recent-meta">
+              <span>{{ u.date_joined|date:"d M" }}</span>
+              <span class="badge {% if u.role == 'buyer' %}badge--blue{% elif u.role == 'seller' %}badge--green{% else %}badge--warn{% endif %}">{{ u.role }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="table-empty">No users yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

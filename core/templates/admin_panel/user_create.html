@@ -1,0 +1,59 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Add User{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-sep">›</span><a href="{% url 'core:admin_users' %}" style="color:var(--text-secondary);text-decoration:none;">Users</a><span class="breadcrumb-sep">›</span><span>Add User</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Add User</h1>
+    <p class="page-subtitle">Create a new account for buyer or seller role.</p>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <span class="table-card-title">User Information</span>
+  </div>
+
+  <div class="panel-form-wrap">
+    <form method="post" class="panel-form-grid">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <label for="id_username">Username</label>
+      {{ form.username }}
+      {{ form.username.errors }}
+
+      <label for="id_email">Email</label>
+      {{ form.email }}
+      {{ form.email.errors }}
+
+      <label for="id_mobile_no">Mobile No</label>
+      {{ form.mobile_no }}
+      {{ form.mobile_no.errors }}
+
+      <label for="id_role">Role</label>
+      {{ form.role }}
+      {{ form.role.errors }}
+
+      <div class="panel-form-checks">
+        <label class="panel-checkbox">{{ form.is_active }} <span>Active</span></label>
+      </div>
+
+      <label for="id_password1">Password</label>
+      {{ form.password1 }}
+      {{ form.password1.errors }}
+
+      <label for="id_password2">Confirm Password</label>
+      {{ form.password2 }}
+      {{ form.password2.errors }}
+
+      <div class="panel-form-actions">
+        <button type="submit" class="btn btn--approve">Create User</button>
+        <a href="{% url 'core:admin_users' %}" class="btn btn--ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

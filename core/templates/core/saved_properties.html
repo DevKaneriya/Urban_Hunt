@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}Saved Properties | Urban Hunt{% endblock %}
+
+{% block content %}
+<section class="theme-hero saved-hero mb-4 mb-lg-5">
+  <div class="theme-hero-content">
+    <span class="eyebrow">{% if can_save_properties %}Buyer Collection{% else %}Saved Collection{% endif %}</span>
+    <h1 class="display-6 fw-bold mb-2">Saved Properties</h1>
+    <p class="text-muted mb-4">
+      {% if can_save_properties %}
+        Review the homes you bookmarked and jump back into the listing when you are ready.
+      {% else %}
+        Browse the saved properties area. Saving listings is currently available for buyer accounts.
+      {% endif %}
+    </p>
+    <a class="btn btn-accent" href="{% url 'core:property_list' %}">Browse More Properties</a>
+  </div>
+</section>
+
+<section class="collection-section">
+  <div class="collection-header">
+    <div>
+      <span class="eyebrow">Your Shortlist</span>
+      <h2 class="h3 mb-1">{{ saved_items|length }} saved propert{{ saved_items|length|pluralize:"y,ies" }}</h2>
+      <p class="text-muted mb-0">Cards are ordered by your most recent saves.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    {% for item in saved_items %}
+      <div class="col-12 col-md-6 col-xl-4">
+        <article class="card premium-card saved-property-card h-100 border-0">
+          {% if item.property.image %}
+            <img src="{{ item.property.image.url }}" class="card-img-top premium-card-image" alt="{{ item.property.title }}" />
+          {% endif %}
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h3 class="h5 mb-0">{{ item.property.title }}</h3>
+              <span class="badge text-bg-light">{{ item.property.get_property_type_display }}</span>
+            </div>
+            <p class="text-muted mb-2">{{ item.property.location }}</p>
+            <p class="small mb-3">{{ item.property.description|truncatechars:120 }}</p>
+            <div class="mt-auto">
+              <p class="fw-semibold fs-5 mb-1">&#8377;{{ item.property.price }}</p>
+              <p class="small text-muted mb-3">Seller: {{ item.property.seller.username }}</p>
+              <div class="d-grid gap-2">
+                <a class="btn btn-dark" href="{% url 'core:property_detail' item.property.pk %}">View Details</a>
+                <button type="button" class="btn btn-outline-danger w-100 remove-saved-btn" data-property-id="{{ item.property.pk }}">Remove from Saved</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="empty-state-card p-4 p-lg-5 text-center">
+          {% if can_save_properties %}
+            <h2 class="h4 mb-2">No saved properties yet</h2>
+            <p class="text-muted mb-4">Start browsing and save the listings you want to compare later.</p>
+            <a class="btn btn-accent" href="{% url 'core:property_list' %}">Find Properties</a>
+          {% else %}
+            <h2 class="h4 mb-2">No saved properties available</h2>
+            <p class="text-muted mb-4">This account can open the saved page, but only buyer accounts can save listings.</p>
+            <a class="btn btn-accent" href="{% url 'core:property_list' %}">Browse Properties</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<script>
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+  function showNotification(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'success' ? '#28a745' : '#dc3545'};
+      color: white;
+      padding: 15px 20px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+      animation: slideIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  document.querySelectorAll('.remove-saved-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const propertyId = this.dataset.propertyId;
+      const card = this.closest('.saved-property-card');
+      
+      try {
+        const response = await fetch(`/properties/${propertyId}/save/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          // Animate removal
+          card.parentElement.style.animation = 'slideOut 0.3s ease';
+          setTimeout(() => {
+            card.parentElement.remove();
+            showNotification(data.message, 'success');
+            
+            // Check if no more items, show empty state
+            if (document.querySelectorAll('.saved-property-card').length === 0) {
+              location.reload();
+            }
+          }, 300);
+        } else {
+          showNotification('Failed to remove property', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification('An error occurred', 'error');
+      }
+    });
+  });
+</script>
+{% endblock %}

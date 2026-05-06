@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Urban Hunt{% endblock %}</title>
+  <link rel="icon" type="image/png" href="/media/logo/Urban_hunt.png" />
+  {% load static %}
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="{% static 'core/css/style.css' %}" />
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg sticky-top premium-navbar py-3">
+    <div class="container-xxl">
+      <a href="{% url 'core:home' %}" class="navbar-brand fw-bold brand-wordmark d-flex align-items-center gap-2">
+        <img src="/media/logo/Urban_hunt.png" alt="UrbanHunt logo" class="navbar-brand-logo" />
+        <span>UrbanHunt<span class="brand-dot">.</span></span>
+      </a>
+
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#mainNavbar"
+        aria-controls="mainNavbar"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNavbar">
+        <ul class="navbar-nav nav-primary-links ms-lg-auto me-lg-3 mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'core:home' %}">
+              <span class="nav-link-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3 3 10h2v10h6v-6h2v6h6V10h2L12 3z"/></svg>
+              </span>
+              <span>Home</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'property_list' %}active{% endif %}" href="{% url 'core:property_list' %}">
+              <span class="nav-link-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4V5zm2 2v10h12V7H6zm2 2h3v6H8V9zm5 0h3v3h-3V9z"/></svg>
+              </span>
+              <span>Properties</span>
+            </a>
+          </li>
+          {% if request.user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'core:dashboard' %}">
+                <span class="nav-link-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                </span>
+                <span>Dashboard</span>
+              </a>
+            </li>
+            {% if request.user.role == 'buyer' %}
+              <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'saved_properties' %}active{% endif %}" href="{% url 'core:saved_properties' %}">
+                  <span class="nav-link-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                  </span>
+                  <span>Saved</span>
+                </a>
+              </li>
+            {% endif %}
+          {% endif %}
+        </ul>
+        <div class="nav-utility">
+          {% if request.user.is_authenticated %}
+            <div class="dropdown me-lg-3 mb-2 mb-lg-0">
+              <button
+                class="btn notification-bell-btn"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                aria-label="Chat notifications"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 22a2.8 2.8 0 0 0 2.58-1.7H9.42A2.8 2.8 0 0 0 12 22Zm7-6.5-1.8-2.35V9a5.2 5.2 0 0 0-3.95-5.05V3a1.25 1.25 0 0 0-2.5 0v.95A5.2 5.2 0 0 0 6.8 9v4.15L5 15.5V17h14v-1.5Z" />
+                </svg>
+                {% if chat_notifications.unread_count %}
+                  <span class="notification-count">{{ chat_notifications.unread_count }}</span>
+                {% endif %}
+              </button>
+              <div class="dropdown-menu dropdown-menu-end notification-menu">
+                <div class="notification-menu-header">
+                  <span>Messages</span>
+                  {% if chat_notifications.unread_count %}
+                    <small>{{ chat_notifications.unread_count }} new</small>
+                  {% endif %}
+                </div>
+                {% for item in chat_notifications.items %}
+                  <a class="dropdown-item notification-item" href="{% url 'core:inquiry_chat_room' item.inquiry_id %}">
+                    <strong>{{ item.sender_name }}</strong>
+                    <span>{{ item.property_title }}</span>
+                    <small>{{ item.preview|truncatechars:72 }}</small>
+                  </a>
+                {% empty %}
+                  <div class="notification-empty">No new chat messages.</div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="dropdown mb-2 mb-lg-0">
+            <button
+              class="btn profile-menu-btn"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+              aria-label="Account menu"
+            >
+              <span class="profile-btn-core">
+                <span class="profile-btn-avatar profile-btn-avatar--icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M12 12.25a4.25 4.25 0 1 0-4.25-4.25A4.25 4.25 0 0 0 12 12.25Zm0 1.75c-4.14 0-7.5 2.69-7.5 6v1h15v-1c0-3.31-3.36-6-7.5-6Z" />
+                  </svg>
+                </span>
+              </span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end profile-menu">
+              {% if request.user.is_authenticated %}
+                <div class="profile-menu-header">
+                  <span class="profile-menu-header-avatar">{{ request.user.username|first|upper }}</span>
+                  <div class="profile-menu-header-copy">
+                    <strong>{{ request.user.username }}</strong>
+                    <span>Signed in account</span>
+                  </div>
+                </div>
+                <a class="dropdown-item profile-menu-action" href="{% url 'core:dashboard' %}">
+                  <span class="profile-menu-action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                  </span>
+                  <span>Dashboard</span>
+                </a>
+                <form method="post" action="{% url 'core:logout' %}">
+                  {% csrf_token %}
+                  <button type="submit" class="dropdown-item profile-menu-action profile-menu-action--danger">
+                    <span class="profile-menu-action-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                    </span>
+                    <span>Logout</span>
+                  </button>
+                </form>
+              {% else %}
+                <div class="profile-menu-header">
+                  <span class="profile-menu-header-avatar profile-menu-header-avatar--icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 12.25a4.25 4.25 0 1 0-4.25-4.25A4.25 4.25 0 0 0 12 12.25Zm0 1.75c-4.14 0-7.5 2.69-7.5 6v1h15v-1c0-3.31-3.36-6-7.5-6Z" /></svg>
+                  </span>
+                  <div class="profile-menu-header-copy">
+                    <strong>Guest</strong>
+                    <span>Access your account</span>
+                  </div>
+                </div>
+                <a class="dropdown-item profile-menu-action" href="{% url 'core:login' %}">
+                  <span class="profile-menu-action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M11 7L9.6 8.4l5 5H2v2h12.6l-5 5L11 21l7-7-7-7z"/></svg>
+                  </span>
+                  <span>Login</span>
+                </a>
+                <a class="dropdown-item profile-menu-action" href="{% url 'core:register' %}">
+                  <span class="profile-menu-action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 7c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5h-12v-2c0-1.5 3.58-2.5 6-2.5s6 1 6 2.5v2z"/></svg>
+                  </span>
+                  <span>Create Account</span>
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container-xxl py-4 py-lg-5">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container-xxl">
+      <div class="site-footer-inner">
+        <div class="site-footer-brand">
+          <a href="{% url 'core:home' %}" class="site-footer-brand-wrapper">
+            <img src="/media/logo/Urban_hunt.png" alt="UrbanHunt logo" class="site-footer-logo-img" />
+            <span class="site-footer-brand-text">UrbanHunt<span class="brand-dot">.</span></span>
+          </a>
+          <p class="site-footer-tagline">Trusted platform for verified listings, direct inquiries, and faster property decisions.</p>
+          <div class="site-footer-highlights">
+            <div class="highlight-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 12l2 2 4-4m7-9H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z"></path>
+              </svg>
+              <span>Verified Listings</span>
+            </div>
+            <div class="highlight-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+              <span>Instant Inquiries</span>
+            </div>
+            <div class="highlight-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+              </svg>
+              <span>Secure Messaging</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="site-footer-col">
+          <h3 class="footer-col-title">Quick Links</h3>
+          <div class="site-footer-links">
+            <a href="{% url 'core:home' %}">
+              <span class="link-icon">→</span>
+              <span>Home</span>
+            </a>
+            <a href="{% url 'core:property_list' %}">
+              <span class="link-icon">→</span>
+              <span>Properties</span>
+            </a>
+            {% if request.user.is_authenticated %}
+              <a href="{% url 'core:dashboard' %}">
+                <span class="link-icon">→</span>
+                <span>Dashboard</span>
+              </a>
+            {% else %}
+              <a href="{% url 'core:login' %}">
+                <span class="link-icon">→</span>
+                <span>Login</span>
+              </a>
+              <a href="{% url 'core:register' %}">
+                <span class="link-icon">→</span>
+                <span>Register</span>
+              </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="site-footer-col">
+          <h3 class="footer-col-title">Support & Contact</h3>
+          <ul class="site-footer-meta">
+            <li>
+              <span class="meta-icon">🕐</span>
+              <span>Mon-Sat: 9:00 AM - 7:00 PM</span>
+            </li>
+            <li>
+              <span class="meta-icon">✉️</span>
+              <span>support@urbanhunt.in</span>
+            </li>
+            <li>
+              <span class="meta-icon">📍</span>
+              <span>Ahmedabad, Gujarat, India</span>
+            </li>
+          </ul>
+          <div class="site-footer-social" aria-label="Social Links">
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="social-link">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1 1 12.324 0 6.162 6.162 0 0 1-12.324 0zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm4.965-10.322a1.44 1.44 0 1 1 2.881.001 1.44 1.44 0 0 1-2.881-.001z"></path>
+              </svg>
+            </a>
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" class="social-link">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"></path>
+              </svg>
+            </a>
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" class="social-link">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="site-footer-divider"></div>
+
+      <div class="site-footer-bottom">
+        <div class="footer-bottom-content">
+          <small>&copy; {% now "Y" %} Urban Hunt. All rights reserved.</small>
+          <div class="footer-bottom-links">
+            <a href="#privacy">Privacy Policy</a>
+            <span class="divider">•</span>
+            <a href="#terms">Terms of Service</a>
+            <span class="divider">•</span>
+            <a href="#cookies">Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"
+  ></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const bellBtn = document.querySelector('.notification-bell-btn');
+      if (bellBtn) {
+        bellBtn.addEventListener('show.bs.dropdown', function () {
+          const countBdg = bellBtn.querySelector('.notification-count');
+          if (countBdg) {
+            // Remove the notification badge visually instantly
+            countBdg.remove();
+            
+            // Remove 'new' text inside dropdown header if exists
+            const headerCount = document.querySelector('.notification-menu-header small');
+            if (headerCount) headerCount.remove();
+            
+            // Send AJAX so it clears permanently Backend-side
+            fetch('{% url "core:api_mark_notifications_read" %}', {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+              }
+            }).catch(err => console.error(err));
+          }
+        }, { once: true });
+      }
+    });
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

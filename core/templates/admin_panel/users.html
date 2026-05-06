@@ -1,0 +1,164 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}Users{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-sep">›</span><span>Users</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Users</h1>
+    <p class="page-subtitle">All registered users on the platform.</p>
+  </div>
+  <a href="{% url 'core:admin_user_create' %}" class="btn btn--primary" id="add-user-btn">Add User</a>
+</div>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <span class="table-card-title">All Users ({{ page_obj.paginator.count }})</span>
+    <form class="table-filter-form" method="get">
+      <input class="filter-input" type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search username or email…" id="user-search-input" />
+      <select class="filter-input" name="role" id="user-role-filter">
+        <option value="">All Roles</option>
+        <option value="buyer"  {% if request.GET.role == 'buyer'  %}selected{% endif %}>Buyer</option>
+        <option value="seller" {% if request.GET.role == 'seller' %}selected{% endif %}>Seller</option>
+      </select>
+      <button type="submit" class="btn btn--primary" id="user-filter-btn">Filter</button>
+      {% if request.GET.q or request.GET.role %}
+        <a href="{% url 'core:admin_users' %}" class="btn btn--ghost" id="user-clear-btn">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Joined</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in page_obj %}
+        <tr id="row-user-{{ u.id }}">
+          <td>
+            <div class="user-chip">
+              <span class="user-chip__avatar">{{ u.username|slice:":1"|upper }}</span>
+              <strong>{{ u.username }}</strong>
+            </div>
+          </td>
+          <td>{{ u.email|default:"—" }}</td>
+          <td>
+            <span class="badge {% if u.role == 'buyer' %}badge--blue{% elif u.role == 'seller' %}badge--green{% else %}badge--warn{% endif %}">
+              {{ u.get_role_display }}
+            </span>
+          </td>
+          <td>
+            {% if u.is_active %}
+              <span class="badge badge--green">Active</span>
+            {% else %}
+              <span class="badge badge--red">Inactive</span>
+            {% endif %}
+          </td>
+          <td>{{ u.date_joined|date:"d M Y" }}</td>
+          <td>
+            <div class="table-actions">
+              <a href="{% url 'core:admin_user_edit' u.id %}" class="btn btn--edit btn--sm" id="edit-user-{{ u.id }}">Edit</a>
+              <button type="button" class="btn btn--delete btn--sm admin-delete-btn" data-url="{% url 'core:admin_user_delete' u.id %}" data-row="row-user-{{ u.id }}">Delete</button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="table-empty">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="pagination-wrap">
+    <span>Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+    <div class="pagination-links">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q|default:'' }}&role={{ request.GET.role|default:'' }}" id="users-prev-page">‹ Prev</a>
+      {% else %}
+        <span class="disabled">‹ Prev</span>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}
+          <span class="current">{{ num }}</span>
+        {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+          <a href="?page={{ num }}&q={{ request.GET.q|default:'' }}&role={{ request.GET.role|default:'' }}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|default:'' }}&role={{ request.GET.role|default:'' }}" id="users-next-page">Next ›</a>
+      {% else %}
+        <span class="disabled">Next ›</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+  function showAdminNotification(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'success' ? '#28a745' : '#dc3545'};
+      color: white;
+      padding: 15px 20px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  document.querySelectorAll('.admin-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      if (!confirm('Are you sure?')) return;
+      
+      const url = this.dataset.url;
+      const rowSelector = this.dataset.row;
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          const row = document.querySelector(`[id="${rowSelector}"]`);
+          if (row) {
+            row.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => row.remove(), 300);
+          }
+          showAdminNotification(data.message, 'success');
+        } else {
+          showAdminNotification(data.message || 'Failed', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showAdminNotification('An error occurred', 'error');
+      }
+    });
+  });
+</script>
+{% endblock %}

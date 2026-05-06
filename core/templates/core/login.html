@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Login | Urban Hunt{% endblock %}
+
+{% block content %}
+<section class="auth-login-shell auth-login-shell--centered">
+  <div class="auth-login-card hero">
+    <h2>Login</h2>
+    {% if success %}
+      <p class="auth-success">{{ success }}</p>
+    {% endif %}
+    {% if error %}
+      <p class="error-msg auth-error">{{ error }}</p>
+    {% endif %}
+    <form method="post" class="auth-form auth-form-modern">
+      {% csrf_token %}
+      {% if next_url %}
+        <input name="next" type="hidden" value="{{ next_url }}" />
+      {% endif %}
+
+      <label for="id_role">Login As</label>
+      <select id="id_role" name="role" required>
+        <option value="buyer" {% if selected_role == "buyer" %}selected{% endif %}>Buyer</option>
+        <option value="seller" {% if selected_role == "seller" %}selected{% endif %}>Seller</option>
+        <option value="admin" {% if selected_role == "admin" %}selected{% endif %}>Admin</option>
+      </select>
+
+      <label for="id_username">Username</label>
+      <input id="id_username" name="username" type="text" value="{{ entered_username|default:'' }}" required />
+
+      <label for="id_password">Password</label>
+      <input id="id_password" name="password" type="password" required />
+
+      <button type="submit" class="auth-submit auth-submit--login">Login</button>
+    </form>
+    <p class="auth-helper-copy"><a href="{% url 'core:forgot_password' %}">Forgot password?</a></p>
+    <p class="auth-helper-copy">New here? <a href="{% url 'core:register' %}">Create your account</a></p>
+  </div>
+</section>
+{% endblock %}

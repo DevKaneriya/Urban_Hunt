@@ -1,0 +1,566 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | Urban Hunt{% endblock %}
+
+{% block content %}
+<section class="theme-hero dashboard-hero mb-4">
+  <div class="theme-hero-content">
+    {% if request.user.role == 'buyer' %}
+      <span class="eyebrow">Buyer Workspace</span>
+      <h1 class="display-6 fw-bold mb-2">Buyer Dashboard</h1>
+      <p class="text-muted mb-4">Manage your inquiries and active chats from one place.</p>
+
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-accent" href="{% url 'core:property_list' %}">Browse Properties</a>
+        <a class="btn btn-outline-light" href="{% url 'core:saved_properties' %}">View Saved Properties</a>
+      </div>
+    {% elif request.user.role == 'seller' %}
+      <span class="eyebrow">Seller Workspace</span>
+      <h1 class="display-6 fw-bold mb-2">Seller Dashboard</h1>
+      <p class="text-muted mb-0">List properties, manage inventory, and respond to buyer conversations.</p>
+    {% else %}
+      <span class="eyebrow">Account Center</span>
+      <h1 class="display-6 fw-bold mb-3">Welcome, {{ request.user.username }}</h1>
+      <p class="mb-4 text-muted">Role: {{ request.user.get_role_display }}</p>
+    {% endif %}
+  </div>
+</section>
+
+{% if request.user.role == 'buyer' %}
+  <div class="row g-4 workspace-sections">
+    <div class="col-12">
+      <div class="card workspace-card border-0">
+        <div class="card-body p-4 p-lg-5">
+          <div class="workspace-card-header">
+            <div>
+              <span class="workspace-kicker">Buyer Activity</span>
+              <h2 class="workspace-card-title">Sent Inquiries</h2>
+              <p class="workspace-card-copy">Track every conversation and jump back into active chats.</p>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table workspace-table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Property</th>
+                  <th>Seller</th>
+                  <th>Your Inquiry</th>
+                  <th>Chat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for inquiry in inquiries %}
+                  <tr>
+                    <td><a class="card-link workspace-table-link" href="{% url 'core:property_detail' inquiry.property.pk %}">{{ inquiry.property.title }}</a></td>
+                    <td>{{ inquiry.property.seller.username }}</td>
+                    <td class="workspace-message-cell">{{ inquiry.message|truncatechars:100 }}</td>
+                    <td>
+                      <a class="btn btn-sm btn-dark chat-action-btn workspace-chat-btn" href="{% url 'core:inquiry_chat_room' inquiry.pk %}">
+                        Open Chat
+                        {% if inquiry.unread_count %}
+                          <span class="chat-unread-badge">{{ inquiry.unread_count }}</span>
+                        {% endif %}
+                      </a>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="4" class="workspace-empty-cell">No inquiries sent yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% elif request.user.role == 'seller' %}
+  <div class="row g-4 workspace-sections">
+    <div class="col-12">
+      <div class="card workspace-card border-0">
+        <div class="card-body p-4 p-lg-5">
+          <div class="workspace-card-header">
+            <div>
+              <span class="workspace-kicker">Inventory</span>
+              <h2 class="workspace-card-title">Add Property</h2>
+              <p class="workspace-card-copy">Create a polished listing with the details buyers need to act.</p>
+            </div>
+          </div>
+          <form method="post" enctype="multipart/form-data" class="row g-3 dashboard-form" id="property-creation-form" onsubmit="return handlePropertyCreation(event)">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="col-md-6">
+              <label class="form-label" for="id_title">Title</label>
+              {{ form.title }}
+              {{ form.title.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="id_price">Price</label>
+              {{ form.price }}
+              {{ form.price.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="id_location">Location</label>
+              {{ form.location }}
+              {{ form.location.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="id_property_type">Property Type</label>
+              {{ form.property_type }}
+              {{ form.property_type.errors }}
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="id_description">Description</label>
+              {{ form.description }}
+              {{ form.description.errors }}
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="id_amenities">Amenities</label>
+              {{ form.amenities }}
+              {{ form.amenities.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="id_image">Image</label>
+              {{ form.image }}
+              {{ form.image.errors }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="id_documents">Documents</label>
+              {{ form.documents }}
+              {{ form.documents.errors }}
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-accent">Create Property</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card workspace-card border-0">
+        <div class="card-body p-4 p-lg-5">
+          <div class="workspace-card-header">
+            <div>
+              <span class="workspace-kicker">Portfolio</span>
+              <h2 class="workspace-card-title">Your Properties</h2>
+              <p class="workspace-card-copy">Keep listings organized, review approval status, and update details quickly.</p>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table workspace-table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Type</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th>Verified</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for property in properties %}
+                  <tr data-property-id="{{ property.pk }}">
+                    <td>
+                      <div class="workspace-property-cell">
+                        {% if property.image %}
+                          <img class="workspace-property-avatar" src="{{ property.image.url }}" alt="{{ property.title }}" />
+                        {% else %}
+                          <span class="workspace-property-avatar-fallback">{{ property.title|first|upper }}</span>
+                        {% endif %}
+                        <a href="{% url 'core:property_detail' property.pk %}" class="workspace-primary-text workspace-property-link">{{ property.title }}</a>
+                      </div>
+                    </td>
+                    <td>{{ property.get_property_type_display }}</td>
+                    <td><span class="workspace-price">₹{{ property.price }}</span></td>
+                    <td>
+                      <span class="status-badge status-badge--{{ property.status }}">{{ property.get_status_display }}</span>
+                    </td>
+                    <td>
+                      {% if property.is_verified %}
+                        <span class="workspace-status-badge is-approved">Approved</span>
+                      {% else %}
+                        <span class="workspace-status-badge is-pending">Pending</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <div class="workspace-action-group">
+                        <div class="workspace-action-primary">
+                          <a class="btn btn-sm workspace-action-btn is-primary icon-btn" href="{% url 'core:edit_property' property.pk %}" title="Edit property">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                          </a>
+                          <form method="post" action="{% url 'core:delete_property' property.pk %}" class="delete-property-form" data-property-id="{{ property.pk }}" style="margin:0;display:inline;" onsubmit="return handleDeleteProperty(event);">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm workspace-action-btn is-danger icon-btn" title="Delete property">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            </button>
+                          </form>
+                        </div>
+                        <div class="workspace-action-status">
+                          {% if property.status == 'available' %}
+                            <form method="post" action="{% url 'core:update_property_status' property.pk %}" class="status-update-form" data-property-id="{{ property.pk }}" data-status="sold" onsubmit="return handleStatusUpdate(event);">
+                              {% csrf_token %}
+                              <input type="hidden" name="status" value="sold">
+                              <button type="submit" class="btn btn-sm workspace-action-btn status-btn status-btn--sold" title="Mark as Sold">Mark Sold</button>
+                            </form>
+                            <form method="post" action="{% url 'core:update_property_status' property.pk %}" class="status-update-form" data-property-id="{{ property.pk }}" data-status="rented" onsubmit="return handleStatusUpdate(event);">
+                              {% csrf_token %}
+                              <input type="hidden" name="status" value="rented">
+                              <button type="submit" class="btn btn-sm workspace-action-btn status-btn status-btn--rented" title="Mark as Rented">Mark Rented</button>
+                            </form>
+                          {% else %}
+                            <form method="post" action="{% url 'core:update_property_status' property.pk %}" class="status-update-form" data-property-id="{{ property.pk }}" data-status="available" onsubmit="return handleStatusUpdate(event);">
+                              {% csrf_token %}
+                              <input type="hidden" name="status" value="available">
+                              <button type="submit" class="btn btn-sm workspace-action-btn status-btn status-btn--available" title="Mark as Available">Mark Available</button>
+                            </form>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="6" class="workspace-empty-cell">No properties added yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card workspace-card border-0">
+        <div class="card-body p-4 p-lg-5">
+          <div class="workspace-card-header">
+            <div>
+              <span class="workspace-kicker">Conversations</span>
+              <h2 class="workspace-card-title">Inquiries and Messages</h2>
+              <p class="workspace-card-copy">See who reached out, what they asked, and move straight into the chat.</p>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table workspace-table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Property</th>
+                  <th>Buyer</th>
+                  <th>Message</th>
+                  <th>Time</th>
+                  <th>Chat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for inquiry in inquiries %}
+                  <tr>
+                    <td><a class="card-link workspace-table-link" href="{% url 'core:property_detail' inquiry.property.pk %}">{{ inquiry.property.title }}</a></td>
+                    <td>{{ inquiry.buyer.username }}</td>
+                    <td class="workspace-message-cell">{{ inquiry.message|truncatechars:100 }}</td>
+                    <td class="workspace-time-cell">{{ inquiry.created_at|date:"M d, Y, g:i A" }}</td>
+                    <td>
+                      <a class="btn btn-sm btn-dark chat-action-btn workspace-chat-btn" href="{% url 'core:inquiry_chat_room' inquiry.pk %}">
+                        Open Chat
+                        {% if inquiry.unread_count %}
+                          <span class="chat-unread-badge">{{ inquiry.unread_count }}</span>
+                        {% endif %}
+                      </a>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="5" class="workspace-empty-cell">No inquiries yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<script>
+// AJAX handlers for dashboard actions
+const statusBadgeClasses = {
+  available: 'status-badge--available',
+  sold: 'status-badge--sold',
+  rented: 'status-badge--rented'
+};
+
+const statusBadgeText = {
+  available: 'Available',
+  sold: 'Sold',
+  rented: 'Rented'
+};
+
+const statusButtonClass = {
+  available: 'status-btn--available',
+  sold: 'status-btn--sold',
+  rented: 'status-btn--rented'
+};
+
+function handleStatusUpdate(event) {
+  event.preventDefault();
+  const form = event.target;
+  const propertyId = form.dataset.propertyId;
+  const newStatus = form.dataset.status;
+  const formData = new FormData(form);
+  
+  fetch(form.action, {
+    method: 'POST',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Find and update the row
+      const row = document.querySelector(`tr[data-property-id="${propertyId}"]`) || 
+                  form.closest('tr');
+      if (row) {
+        // Update status badge
+        const statusBadge = row.querySelector('.status-badge');
+        if (statusBadge) {
+          statusBadge.className = `status-badge status-badge--${data.status}`;
+          statusBadge.textContent = data.status_display;
+        }
+        
+        // Update action buttons
+        const actionStatus = row.querySelector('.workspace-action-status');
+        if (actionStatus) {
+          actionStatus.innerHTML = '';
+          if (data.status === 'available') {
+            actionStatus.innerHTML = `
+              <form method="post" action="${form.action}" class="status-update-form" data-property-id="${propertyId}" data-status="sold" onsubmit="return handleStatusUpdate(event);">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
+                <input type="hidden" name="status" value="sold">
+                <button type="submit" class="btn btn-sm workspace-action-btn status-btn status-btn--sold" title="Mark as Sold">Mark Sold</button>
+              </form>
+              <form method="post" action="${form.action}" class="status-update-form" data-property-id="${propertyId}" data-status="rented" onsubmit="return handleStatusUpdate(event);">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
+                <input type="hidden" name="status" value="rented">
+                <button type="submit" class="btn btn-sm workspace-action-btn status-btn status-btn--rented" title="Mark as Rented">Mark Rented</button>
+              </form>
+            `;
+          } else {
+            actionStatus.innerHTML = `
+              <form method="post" action="${form.action}" class="status-update-form" data-property-id="${propertyId}" data-status="available" onsubmit="return handleStatusUpdate(event);">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
+                <input type="hidden" name="status" value="available">
+                <button type="submit" class="btn btn-sm workspace-action-btn status-btn status-btn--available" title="Mark as Available">Mark Available</button>
+              </form>
+            `;
+          }
+        }
+        
+        // Show toast notification
+        showNotification('✓ Property status updated successfully!', 'success');
+      }
+    } else {
+      showNotification('✗ Failed to update property status', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showNotification('✗ An error occurred', 'error');
+  });
+  
+  return false;
+}
+
+function handleDeleteProperty(event) {
+  event.preventDefault();
+  if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+    return false;
+  }
+  
+  const form = event.target;
+  const propertyId = form.dataset.propertyId;
+  const formData = new FormData(form);
+  
+  fetch(form.action, {
+    method: 'POST',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Find and remove the row
+      const row = form.closest('tr');
+      if (row) {
+        row.style.opacity = '0.5';
+        row.style.pointerEvents = 'none';
+        setTimeout(() => {
+          row.remove();
+          showNotification('✓ Property deleted successfully!', 'success');
+          // If no properties left, reload
+          const tbody = document.querySelector('.workspace-table tbody');
+          if (tbody.children.length === 0) {
+            location.reload();
+          }
+        }, 300);
+      }
+    } else {
+      showNotification('✗ Failed to delete property', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showNotification('✗ An error occurred', 'error');
+  });
+  
+  return false;
+}
+
+function handlePropertyCreation(event) {
+  event.preventDefault();
+  const form = document.getElementById('property-creation-form');
+  const formData = new FormData(form);
+  
+  fetch(form.action, {
+    method: 'POST',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      const property = data.property;
+      
+      // Get the properties table tbody
+      const tbody = document.querySelector('.workspace-table tbody');
+      if (!tbody) return;
+      
+      // Create new table row
+      const row = document.createElement('tr');
+      row.setAttribute('data-property-id', property.id);
+      row.innerHTML = `
+        <td>
+          <div class="workspace-property-cell">
+            ${property.image_url ? 
+              `<img class="workspace-property-avatar" src="${property.image_url}" alt="${property.title}" />` :
+              `<span class="workspace-property-avatar-fallback">${property.title.charAt(0).toUpperCase()}</span>`
+            }
+            <a href="/properties/${property.id}/" class="workspace-primary-text workspace-property-link">${property.title}</a>
+          </div>
+        </td>
+        <td>${property.property_type}</td>
+        <td><span class="workspace-price">₹${property.price}</span></td>
+        <td>
+          <span class="status-badge status-badge--${property.status}">${property.status_display}</span>
+        </td>
+        <td>
+          <span class="workspace-status-badge ${property.is_verified ? 'is-approved' : 'is-pending'}">${property.is_verified ? 'Approved' : 'Pending'}</span>
+        </td>
+        <td>
+          <div class="workspace-action-group">
+            <div class="workspace-action-primary">
+              <a class="btn btn-sm workspace-action-btn is-primary icon-btn" href="/seller/properties/${property.id}/edit/" title="Edit property">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </a>
+              <form method="post" action="/seller/properties/${property.id}/delete/" class="delete-property-form" data-property-id="${property.id}" style="margin:0;display:inline;" onsubmit="return handleDeleteProperty(event);">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
+                <button type="submit" class="btn btn-sm workspace-action-btn is-danger icon-btn" title="Delete property">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                </button>
+              </form>
+            </div>
+            <div class="workspace-action-status">
+              <form method="post" action="/seller/properties/${property.id}/status/" class="status-update-form" data-property-id="${property.id}" data-status="sold" onsubmit="return handleStatusUpdate(event);">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
+                <input type="hidden" name="status" value="sold">
+                <button type="submit" class="btn btn-sm workspace-action-btn status-btn status-btn--sold" title="Mark as Sold">Mark Sold</button>
+              </form>
+              <form method="post" action="/seller/properties/${property.id}/status/" class="status-update-form" data-property-id="${property.id}" data-status="rented" onsubmit="return handleStatusUpdate(event);">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
+                <input type="hidden" name="status" value="rented">
+                <button type="submit" class="btn btn-sm workspace-action-btn status-btn status-btn--rented" title="Mark as Rented">Mark Rented</button>
+              </form>
+            </div>
+          </div>
+        </td>
+      `;
+      
+      // If there's an empty state message, remove it
+      const emptyMsg = tbody.querySelector('tr td[colspan]');
+      if (emptyMsg) {
+        emptyMsg.parentElement.remove();
+      }
+      
+      // Add the new row at the beginning (most recent first)
+      tbody.insertBefore(row, tbody.firstChild);
+      
+      // Reset form
+      form.reset();
+      
+      // Show notification
+      showNotification('✓ Property created successfully!', 'success');
+      
+      // Scroll to the new property
+      setTimeout(() => {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 200);
+    } else {
+      // Show errors
+      if (data.errors) {
+        const errorMsg = Object.values(data.errors).flat().join(', ');
+        showNotification('✗ ' + errorMsg, 'error');
+      } else {
+        showNotification('✗ Failed to create property', 'error');
+      }
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showNotification('✗ An error occurred', 'error');
+  });
+  
+  return false;
+}
+
+function showNotification(message, type) {
+  // Create a simple toast notification
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    background: ${type === 'success' ? '#10b981' : '#ef4444'};
+    color: white;
+    border-radius: 8px;
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+    font-weight: 500;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Add animation styles
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(400px); opacity: 0; }
+  }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

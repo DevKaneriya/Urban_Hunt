@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ property.title }} | Urban Hunt{% endblock %}
+
+{% block content %}
+<section class="detail-page">
+  <div class="hero detail-hero detail-hero-card">
+    <span class="detail-kicker">Verified Property View</span>
+    <h1>{{ property.title }}</h1>
+    <p class="detail-meta">{{ property.get_property_type_display }} | {{ property.location }}</p>
+    {% if property.status != 'available' %}
+      <p class="detail-meta" style="color: #dc3545; font-weight: 600; margin-top: 0.5rem;">
+        <span class="status-badge status-badge--{{ property.status }}">{{ property.get_status_display }}</span>
+      </p>
+    {% endif %}
+    <p class="detail-price"><strong>Price:</strong> ₹{{ property.price }}</p>
+  </div>
+
+  <section class="detail-grid">
+    <article class="property-card detail-card detail-media-card">
+      <h2>Images</h2>
+      {% if property.image %}
+        <img class="property-image" src="{{ property.image.url }}" alt="{{ property.title }}" />
+      {% else %}
+        <p class="detail-muted">No image available.</p>
+      {% endif %}
+    </article>
+
+    <article class="property-card detail-card">
+      <h2>Description</h2>
+      <p class="detail-copy">{{ property.description }}</p>
+      {% if property.amenities %}
+        <p class="detail-copy"><strong>Amenities:</strong> {{ property.amenities }}</p>
+      {% endif %}
+    </article>
+
+    <article class="property-card detail-card">
+      <h2>Map</h2>
+      <div class="map-wrap">
+        <iframe
+          title="Map for {{ property.location }}"
+          src="https://maps.google.com/maps?q={{ property.location|urlencode }}&output=embed"
+          loading="lazy"
+        ></iframe>
+      </div>
+    </article>
+
+    <article class="property-card detail-card detail-seller-card">
+      <h2>Seller Details</h2>
+      <p class="detail-copy"><strong>Username:</strong> {{ property.seller.username }}</p>
+      <p class="detail-copy"><strong>Email:</strong> {{ property.seller.email|default:'Not provided' }}</p>
+
+      {% if request.user.is_authenticated and request.user.role == 'buyer' and not request.user.is_superuser %}
+        <form id="save-property-form" class="inline-form detail-inline-action" onsubmit="handleSaveProperty(event)">
+          {% csrf_token %}
+          <button type="submit" class="secondary-btn detail-secondary-btn" id="save-btn">
+            {% if is_saved %}Remove from Saved{% else %}Save Property{% endif %}
+          </button>
+        </form>
+
+        {% if property.status == 'available' %}
+          <form id="contact-seller-form" class="contact-form detail-contact-form" onsubmit="handleContactSeller(event)">
+            {% csrf_token %}
+            <label for="id_message">Message</label>
+            <textarea id="id_message" name="message" rows="3" placeholder="Hi, I am interested in this property."></textarea>
+            <button type="submit" id="contact-btn">Contact Seller</button>
+          </form>
+        {% else %}
+          <div class="alert alert-warning" role="alert">
+            <strong>⚠️ Property Not Available:</strong> This property is currently <strong>{{ property.get_status_display|lower }}</strong> and is no longer available for contact.
+            {% if property.status == 'sold' %}
+              <p style="margin-top: 0.5rem; margin-bottom: 0;">This property has been sold. Please explore other available properties.</p>
+            {% elif property.status == 'rented' %}
+              <p style="margin-top: 0.5rem; margin-bottom: 0;">This property is currently on rent. Please check back later or explore other available properties.</p>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% elif request.user.is_authenticated %}
+        <p class="detail-muted">Only buyers can save properties and contact sellers from this page.</p>
+      {% else %}
+        <p class="detail-muted"><a class="card-link" href="{% url 'core:login' %}?next={% url 'core:property_detail' property.pk %}">Login to contact seller</a></p>
+      {% endif %}
+    </article>
+  </section>
+</section>
+
+<script>
+  const propertyPk = {{ property.pk }};
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+  function showNotification(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'success' ? '#28a745' : '#dc3545'};
+      color: white;
+      padding: 15px 20px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+      animation: slideIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  async function handleSaveProperty(event) {
+    event.preventDefault();
+    const form = event.target;
+    const btn = form.querySelector('#save-btn');
+    
+    try {
+      const formData = new FormData();
+      const response = await fetch(`/properties/${propertyPk}/save/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        btn.textContent = data.button_text;
+        showNotification(data.message, 'success');
+      } else {
+        showNotification('Failed to update save status', 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('An error occurred', 'error');
+    }
+  }
+
+  async function handleContactSeller(event) {
+    event.preventDefault();
+    const form = event.target;
+    const btn = form.querySelector('#contact-btn');
+    const textarea = form.querySelector('#id_message');
+    
+    btn.disabled = true;
+    try {
+      const formData = new FormData(form);
+      const response = await fetch(`/properties/${propertyPk}/contact/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        textarea.value = '';
+        showNotification(data.message, 'success');
+        // Wait a moment then redirect
+        setTimeout(() => {
+          window.location.href = data.chat_url;
+        }, 1000);
+      } else {
+        showNotification(data.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Failed to send message', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+</script>
+{% endblock %}

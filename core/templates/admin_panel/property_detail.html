@@ -1,0 +1,129 @@
+{% extends "admin_panel/base.html" %}
+
+{% block title %}{{ property.title }}{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-sep">›</span><a href="{% url 'core:admin_properties' %}" style="color:var(--text-secondary);text-decoration:none;">Properties</a><span class="breadcrumb-sep">›</span><span>View Property</span>{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ property.title }}</h1>
+    <p class="page-subtitle">Admin property preview for internal review.</p>
+  </div>
+  <div class="table-actions">
+    <a href="{% url 'core:admin_properties' %}" class="btn btn--ghost">Back to Properties</a>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <span class="table-card-title">Property Details</span>
+  </div>
+
+  <div class="panel-form-wrap admin-property-detail-grid">
+    <div class="admin-property-media">
+      {% if property.image %}
+        <img src="{{ property.image.url }}" alt="{{ property.title }}" class="admin-property-image">
+      {% else %}
+        <div class="admin-property-image admin-property-image--empty">No image available</div>
+      {% endif %}
+    </div>
+
+    <div class="admin-property-meta">
+      <p><strong>Seller:</strong> {{ property.seller.username }}</p>
+      <p><strong>Seller Email:</strong> {{ property.seller.email|default:"Not provided" }}</p>
+      <p><strong>Type:</strong> {{ property.get_property_type_display }}</p>
+      <p><strong>Price:</strong> INR {{ property.price|floatformat:0 }}</p>
+      <p><strong>Location:</strong> {{ property.location }}</p>
+      <p><strong>Verification Status:</strong>
+        {% if property.is_verified %}
+          <span class="badge badge--green">✓ Verified</span>
+        {% else %}
+          <span class="badge badge--warn">Pending</span>
+        {% endif %}
+      </p>
+      <p><strong>Listing Status:</strong> 
+        <span class="status-badge status-badge--{{ property.status }}">{{ property.get_status_display }}</span>
+      </p>
+      <p><strong>Created:</strong> {{ property.created_at|date:"d M Y, h:i A" }}</p>
+      <p><strong>Updated:</strong> {{ property.updated_at|date:"d M Y, h:i A" }}</p>
+      {% if property.documents %}
+        <p><strong>Documents:</strong> <a href="{{ property.documents.url }}" target="_blank" class="btn btn--view btn--sm">Open Documents</a></p>
+      {% endif %}
+      <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+        <p><strong>Update Listing Status:</strong></p>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          {% for status_value, status_label in property.PropertyStatus.choices %}
+            <button type="button" class="btn btn--sm admin-status-btn" data-url="{% url 'core:admin_property_update_status' property.pk %}" data-status="{{ status_value }}" {% if property.status == status_value %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
+              Mark as {{ status_label }}
+            </button>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-property-description">
+      <h3>Description</h3>
+      <p>{{ property.description|linebreaksbr }}</p>
+
+      {% if property.amenities %}
+        <h3>Amenities</h3>
+        <p>{{ property.amenities|linebreaksbr }}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+  function showAdminNotification(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'success' ? '#28a745' : '#dc3545'};
+      color: white;
+      padding: 15px 20px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  document.querySelectorAll('.admin-status-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const url = this.dataset.url;
+      const status = this.dataset.status;
+      
+      try {
+        const formData = new FormData();
+        formData.append('status', status);
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showAdminNotification(data.message, 'success');
+          setTimeout(() => location.reload(), 500);
+        } else {
+          showAdminNotification(data.message || 'Failed', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showAdminNotification('An error occurred', 'error');
+      }
+    });
+  });
+</script>
+{% endblock %}
