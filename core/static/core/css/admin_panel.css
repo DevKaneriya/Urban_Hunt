@@ -94,13 +94,20 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0;
+  gap: 10px;
   text-decoration: none;
   color: #fff;
   font-weight: 800;
   font-size: 1.35rem;
   letter-spacing: -0.03em;
   line-height: 1;
+}
+
+.sidebar-brand-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .brand-text {
@@ -196,7 +203,7 @@ body {
   color: #93c5fd;
 }
 .sidebar-link.active .nav-icon svg { fill: #93c5fd; }
-.sidebar-link--sub { padding-left: 20px; font-size: 0.825rem; }
+.sidebar-link--sub { padding-left: 12px; font-size: 0.875rem; }
 .sidebar-link--logout { color: var(--danger); }
 .sidebar-link--logout:hover { background: var(--danger-soft); color: var(--danger); }
 .sidebar-logout-form { margin-top: auto; }
@@ -239,7 +246,7 @@ body {
 .admin-topbar {
   position: sticky;
   top: 0;
-  height: var(--topbar-h);
+  min-height: var(--topbar-h);
   background: #ffffff;
   backdrop-filter: none;
   border-bottom: 1px solid var(--border);
@@ -247,7 +254,7 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 0 24px;
+  padding: 14px 32px;
   z-index: 100;
 }
 .topbar-menu-btn {
@@ -319,6 +326,7 @@ body {
   color: var(--text-primary);
 }
 .page-subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 4px; }
+.page-actions { display: flex; gap: 12px; align-items: center; }
 
 /* ─── Stat Cards ──────────────────────────────────────── */
 .stat-grid {

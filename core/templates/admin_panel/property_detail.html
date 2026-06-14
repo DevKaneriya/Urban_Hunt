@@ -32,7 +32,7 @@
       <p><strong>Seller:</strong> {{ property.seller.username }}</p>
       <p><strong>Seller Email:</strong> {{ property.seller.email|default:"Not provided" }}</p>
       <p><strong>Type:</strong> {{ property.get_property_type_display }}</p>
-      <p><strong>Price:</strong> INR {{ property.price|floatformat:0 }}</p>
+      <p><strong>Price:</strong> INR {{ property.price }}</p>
       <p><strong>Location:</strong> {{ property.location }}</p>
       <p><strong>Verification Status:</strong>
         {% if property.is_verified %}

@@ -10,7 +10,10 @@
 
 {% block branding %}
   <h1 id="site-name">
-    <a href="{% url 'admin:index' %}">UrbanHunt<span class="brand-dot">.</span> Admin</a>
+    <a href="{% url 'admin:index' %}" class="admin-brand">
+      <img src="{% static 'core/images/home-hero-premium.svg' %}" alt="UrbanHunt logo" class="admin-brand-logo" />
+      <span>UrbanHunt<span class="brand-dot">.</span> Admin</span>
+    </a>
   </h1>
 {% endblock %}
 

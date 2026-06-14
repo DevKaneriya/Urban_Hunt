@@ -125,7 +125,7 @@ textarea,
   width: auto;
   object-fit: contain;
   transition: filter 0.22s ease;
-  mix-blend-mode: lighten;
+  mix-blend-mode: normal;
   filter: contrast(1.1) brightness(1.1);
 }
 
@@ -843,7 +843,7 @@ body:has(.auth-login-shell--centered) .site-footer {
   width: auto;
   object-fit: contain;
   filter: contrast(1.1) brightness(1.1);
-  mix-blend-mode: screen;
+  mix-blend-mode: normal;
   background: transparent !important;
 }
 
@@ -2551,7 +2551,7 @@ body:has(.auth-login-shell--centered) .site-footer {
     linear-gradient(126deg, rgba(3, 14, 27, 0.72), rgba(9, 31, 53, 0.58)),
     radial-gradient(circle at 20% 18%, rgba(108, 205, 255, 0.22), rgba(108, 205, 255, 0) 34%),
     radial-gradient(circle at 86% 82%, rgba(28, 152, 196, 0.2), rgba(28, 152, 196, 0) 38%),
-    url("/media/logo/login.jpg") center / cover no-repeat;
+    url("/media/logo/login-clean.jpg") center / cover no-repeat;
 }
 
 .auth-login-shell--centered::before,

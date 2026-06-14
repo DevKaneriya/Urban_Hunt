@@ -23,7 +23,7 @@
         <tr><th>Property</th><td>{{ saved_item.property.title }}</td></tr>
         <tr><th>Location</th><td>{{ saved_item.property.location }}</td></tr>
         <tr><th>Type</th><td>{{ saved_item.property.get_property_type_display }}</td></tr>
-        <tr><th>Price</th><td>₹{{ saved_item.property.price|floatformat:0 }}</td></tr>
+        <tr><th>Price</th><td>₹{{ saved_item.property.price }}</td></tr>
         <tr><th>Verified</th><td>{% if saved_item.property.is_verified %}Yes{% else %}No{% endif %}</td></tr>
         <tr><th>Saved On</th><td>{{ saved_item.created_at|date:"d M Y, h:i A" }}</td></tr>
       </tbody>

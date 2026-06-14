@@ -48,7 +48,7 @@
               {{ s.property.get_property_type_display }}
             </span>
           </td>
-          <td>₹{{ s.property.price|floatformat:0 }}</td>
+          <td>₹{{ s.property.price }}</td>
           <td>
             {% if s.property.is_verified %}
               <span class="badge badge--green">✓</span>

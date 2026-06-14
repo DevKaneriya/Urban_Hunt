@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}Admin Panel{% endblock %} - UrbanHunt</title>
+  {% load static %}
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -19,6 +20,7 @@
 <aside class="admin-sidebar" id="adminSidebar">
   <div class="sidebar-header">
     <a href="{% url 'core:admin_dashboard' %}" class="sidebar-brand">
+      <img src="{% static 'core/images/home-hero-premium.svg' %}" alt="UrbanHunt logo" class="sidebar-brand-logo" />
       <span class="brand-text">UrbanHunt<span class="brand-dot">.</span></span>
     </a>
     <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close sidebar">&times;</button>

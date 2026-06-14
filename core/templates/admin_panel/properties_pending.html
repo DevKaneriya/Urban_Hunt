@@ -51,7 +51,7 @@
               {{ p.get_property_type_display }}
             </span>
           </td>
-          <td>₹{{ p.price|floatformat:0 }}</td>
+          <td>₹{{ p.price }}</td>
           <td>{{ p.location|truncatechars:22 }}</td>
           <td>
             {% if p.documents %}
