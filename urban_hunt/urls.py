@@ -25,5 +25,5 @@ urlpatterns = [
     path("", include("core.urls")),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Render and similar hosts still need media URLs routed to the Django app.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
