@@ -49,8 +49,6 @@ wheels/
 .DS_Store
 
 # Project specific
-/media/properties/
-/media/logo/
 /static/
 
 # Testing
